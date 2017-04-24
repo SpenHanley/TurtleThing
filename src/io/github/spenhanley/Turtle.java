@@ -112,6 +112,16 @@ public class Turtle
 		return true;
 	}
 	
+	public int getOffsetX()
+	{
+		return this.x + (this.imgWidth / 2);
+	}
+	
+	public int getOffsetY()
+	{
+		return this.y + (this.imgHeight / 2);
+	}
+	
 	public int getDirection()
 	{
 		return dir;

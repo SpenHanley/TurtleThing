@@ -1,22 +1,29 @@
 package io.github.spenhanley;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferStrategy;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
-
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
 public class Practice extends Canvas implements Runnable
@@ -24,8 +31,15 @@ public class Practice extends Canvas implements Runnable
 	
 	private static final long serialVersionUID = 1L;
 	
+	// Draw started here
+	private int startX;
+	private int startY;
+	private int lastX;
+	private int lastY;
+
 	private int width = 400;
 	private int height = 400;
+	
 	private boolean running = false;
 	
 	private final String TITLE = "Turtle Program";
@@ -33,11 +47,13 @@ public class Practice extends Canvas implements Runnable
 	private JFrame frame;
 	private Turtle turtle;
 	private Image turtleImage;
+	private BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 	private Thread thread;
 	private JPanel btnPanel, fieldPanel, container, canv;
 	private JButton up, down, left, right;
 	private JTextField cyclesField;
 	private JLabel lblCycles;
+	private JCheckBox chkDraw;
 	
 	public Practice()
 	{
@@ -58,6 +74,8 @@ public class Practice extends Canvas implements Runnable
 		lblCycles = new JLabel("Cycles:");
 		cyclesField = new JTextField(20);
 		
+		chkDraw = new JCheckBox("Draw");
+		
 		btnPanel.add(up);
 		btnPanel.add(down);
 		btnPanel.add(left);
@@ -65,11 +83,21 @@ public class Practice extends Canvas implements Runnable
 		
 		fieldPanel.add(lblCycles);
 		fieldPanel.add(cyclesField);
+		fieldPanel.add(chkDraw);
 		
 		container.setLayout(new BorderLayout());
 		container.add(btnPanel, BorderLayout.NORTH);
 		container.add(canv, BorderLayout.CENTER);
 		container.add(fieldPanel, BorderLayout.SOUTH);
+		
+		chkDraw.addActionListener((e) -> {
+			if (chkDraw.isSelected()) {
+				startX = turtle.getOffsetX();
+				startY = turtle.getOffsetY();
+				lastX = startX;
+				lastY = startY;
+			}
+		});
 		
 		up.addActionListener((e) -> {
 			String cyclesString = cyclesField.getText();
@@ -146,13 +174,28 @@ public class Practice extends Canvas implements Runnable
 			createBufferStrategy(3);
 			return;
 		}
-				
+		
 		Graphics g = bs.getDrawGraphics();
+		Graphics2D g2 = image.createGraphics();
+		
+		if (chkDraw.isSelected())
+		{
+			
+			g2.setStroke(new BasicStroke(10));
+			Random rand = new Random();
+			g2.setColor(new Color(rand.nextInt(255),rand.nextInt(255),rand.nextInt(255)));
+			g2.drawLine(lastX, lastY, turtle.getOffsetX(), turtle.getOffsetY());
+			
+			lastX = (turtle.getOffsetX());
+			lastY = (turtle.getOffsetY());
+		}
 		
 		g.setColor(Color.BLACK);
 		
 		g.clearRect(0, 0, getWidth(), getHeight());
+		g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
 		g.drawImage(turtleImage, turtle.getX(), turtle.getY(), null);
+		System.out.println(turtle.getOffsetX() + " : " + turtle.getX());
 		
 		g.dispose();
 		bs.show();
@@ -201,16 +244,28 @@ public class Practice extends Canvas implements Runnable
 	
 	public static void main(String[] args)
 	{
-		Practice p = new Practice();
-		
-		p.frame.add(p.container);
-		p.frame.setTitle(p.TITLE);
-		p.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		p.frame.setLocationRelativeTo(null);
-		p.frame.pack();
-		p.frame.setVisible(true);
-		
-		p.start();
+		EventQueue.invokeLater(new Runnable(){
+			public void run()
+			{
+				
+				try {
+					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+						| UnsupportedLookAndFeelException e) {
+					e.printStackTrace();
+				}
+				
+				Practice p = new Practice();
+				p.frame.add(p.container);
+				p.frame.setTitle(p.TITLE);
+				p.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+				p.frame.setLocationRelativeTo(null);
+				p.frame.pack();
+				p.frame.setVisible(true);
+				
+				p.start();	
+			}
+		});
 	}
 	
 }
