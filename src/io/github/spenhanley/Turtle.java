@@ -1,6 +1,13 @@
 package io.github.spenhanley;
 
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 public class Turtle
 {
@@ -10,6 +17,8 @@ public class Turtle
 	public static final int MOVE_DOWN = 2;
 	public static final int MOVE_LEFT = 3;
 	public static final int MOVE_RIGHT = 4;
+	
+	private Image turtleImage;
 	
 	private final int SPEED = 1;
 	
@@ -24,14 +33,12 @@ public class Turtle
 	private int curCycles;
 	private int imgWidth;
 	private int imgHeight;
+	private int deg; // Rotation
+	private int dir = STOP; // Current direction
 	
-	private int dir = STOP;
-	
-	public Turtle(int width, int height, Image img)
+	public Turtle(int width, int height)
 	{
 		this(width, height, width/2, height/2);
-		this.imgWidth = img.getWidth(null);
-		this.imgHeight = img.getHeight(null);
 	}
 	
 	public Turtle(int width, int height, int startX, int startY)
@@ -41,39 +48,108 @@ public class Turtle
 		this.height = height;
 		this.x = startX;
 		this.y = startY;
+		this.deg = 0;
+		this.turtleImage = loadImage("res/Turtle.png");
+		this.imgWidth = turtleImage.getWidth(null);
+		this.imgHeight = turtleImage.getHeight(null);
 	}
 	
-	public void move(int dir, int cycles)
+	public void draw(Graphics g)
 	{
-		this.cycles = cycles;
+		BufferedImage bTurtleImage = toBufferedImage(turtleImage);
+		
+		g.drawImage(bTurtleImage, this.x, this.y, null);
+	}
+	
+	private BufferedImage toBufferedImage(Image img)
+	{
+		if (img instanceof BufferedImage)
+			return (BufferedImage) img;
+		
+		BufferedImage bImage = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = bImage.createGraphics();
+		
+		g2.drawImage(img, 0, 0, null);
+		g2.dispose();
+		
+		return bImage;
+	}
+	
+	public void move(int dir, int cycles, int deg)
+	{
 		if (canMove(dir))
 		{
 			this.dir = dir;
 			
+			int validCycles = getValidCycles();
+			
+			if (cycles < validCycles)
+				this.cycles = cycles;
+			else 
+				this.cycles = validCycles;
+			
 			if (dir == MOVE_UP) {
-				this.ySpeed = -5;
+				this.ySpeed = -SPEED;
 				this.xSpeed = 0;
 			} else if (dir == MOVE_DOWN)
 			{
-				this.ySpeed = 5;
+				this.ySpeed = SPEED;
 				this.xSpeed = 0;
 			}
 			
 			if (dir == MOVE_LEFT) {
-				this.xSpeed = -5;
+				this.xSpeed = -SPEED;
 				this.ySpeed = 0;
 			} else if (dir == MOVE_RIGHT) {
-				this.xSpeed = 5;
+				this.xSpeed = SPEED;
 				this.ySpeed = 0;
 			}
-			this.cycles = cycles;
+			
+		} else
+		{
+			ySpeed = 0;
+			xSpeed = 0;
+			cycles = 0;
+			dir = STOP;
 		}
+	}
+	
+	private int getValidCycles() {
+		if (dir == MOVE_UP)
+			return y / SPEED;
+		else if (dir == MOVE_DOWN)
+			return (height - y) / SPEED;
+
+		if (dir == MOVE_LEFT)
+			return x / SPEED;
+		else if (dir == MOVE_RIGHT)
+			return (width - x) / SPEED;
+		
+		return 0;
+	}
+
+	private Image loadImage(String path)
+	{
+		try {
+			return ImageIO.read(new File(path));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public void update()
 	{
 		this.x += this.xSpeed;
 		this.y += this.ySpeed;
+		
+		if (canMove(dir)) {
+			this.x += this.xSpeed;
+			this.y += this.ySpeed;
+		} else
+		{
+			dir = STOP;
+		}
 
 		if (dir == STOP) {
 			this.xSpeed = 0;
@@ -81,10 +157,15 @@ public class Turtle
 			this.curCycles = 0;
 		}
 		
+		if ((cycles - curCycles) > getValidCycles())
+			cycles = getValidCycles();
+		
 		if (cycles == 0)
 			dir = STOP;
 		
-		curCycles += 1;
+		if (curCycles < cycles)
+			curCycles += 1;
+		
 		if (curCycles == cycles) {
 			cycles = 0;
 			curCycles = 0;
@@ -94,22 +175,7 @@ public class Turtle
 	
 	public boolean canMove(int dir)
 	{
-		if (dir == MOVE_UP && this.y <= 0 || dir == MOVE_DOWN && (this.y + this.imgWidth) >= width)
-		{
-			System.err.println("Out of bounds Y");
-			dir = STOP;
-			cycles = 0;
-			return false;
-		}
-		
-		if (dir == MOVE_LEFT && this.x <= 0 || dir == MOVE_RIGHT && (this.x + this.imgHeight) >= height)
-		{
-			System.err.println("Out of bounds X");
-			dir = STOP;
-			cycles = 0;
-			return false;
-		}
-		return true;
+		return !(dir == MOVE_UP && this.y <= 0 || dir == MOVE_DOWN && (this.y + this.imgWidth) >= width || dir == MOVE_LEFT && this.x <= 0 || dir == MOVE_RIGHT && (this.x + this.imgHeight) >= height);
 	}
 	
 	public int getOffsetX()

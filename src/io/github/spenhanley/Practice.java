@@ -9,6 +9,7 @@ import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -37,8 +38,14 @@ public class Practice extends Canvas implements Runnable
 	private int lastX;
 	private int lastY;
 
+	private int r = 255;
+	private int b = 255;
+	
 	private int width = 400;
 	private int height = 400;
+	
+	private int rinc = 1;
+	private int binc = 3;
 	
 	private boolean running = false;
 	
@@ -46,7 +53,6 @@ public class Practice extends Canvas implements Runnable
 	
 	private JFrame frame;
 	private Turtle turtle;
-	private Image turtleImage;
 	private BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 	private Thread thread;
 	private JPanel btnPanel, fieldPanel, container, canv;
@@ -73,6 +79,7 @@ public class Practice extends Canvas implements Runnable
 		right = new JButton("Right");
 		lblCycles = new JLabel("Cycles:");
 		cyclesField = new JTextField(20);
+		cyclesField.setText("0");
 		
 		chkDraw = new JCheckBox("Draw");
 		
@@ -107,7 +114,7 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_UP, cycles);
+			turtle.move(Turtle.MOVE_UP, cycles, 0);
 		});
 		
 		down.addActionListener((e) -> {
@@ -118,7 +125,7 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_DOWN, cycles);
+			turtle.move(Turtle.MOVE_DOWN, cycles, 180);
 		});
 		
 		left.addActionListener((e) -> {
@@ -129,7 +136,7 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_LEFT, cycles);
+			turtle.move(Turtle.MOVE_LEFT, cycles, 270);
 		});
 		
 		right.addActionListener((e) -> {
@@ -140,33 +147,18 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_RIGHT, cycles);
+			turtle.move(Turtle.MOVE_RIGHT, cycles, 90);
 		});
 		
-		turtleImage = loadImage("res/Turtle.png");
-		if (turtleImage == null) {
-			System.err.println("Could not load turtle!");
-			System.exit(1);
-		}
-		turtle = new Turtle(width, height, turtleImage);
+		turtle = new Turtle(width, height);
 		
 		setSize(new Dimension(width, height));
 		setBackground(Color.BLACK);
 		setFocusable(true);
 	}
 	
-	private Image loadImage(String path)
-	{
-		try {
-			return ImageIO.read(new File(path));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
 	public void render()
-	{
+	{		
 		BufferStrategy bs = getBufferStrategy();
 		
 		if (bs == null)
@@ -180,22 +172,31 @@ public class Practice extends Canvas implements Runnable
 		
 		if (chkDraw.isSelected())
 		{
-			
 			g2.setStroke(new BasicStroke(10));
 			Random rand = new Random();
-			g2.setColor(new Color(rand.nextInt(255),rand.nextInt(255),rand.nextInt(255)));
+			
+			if (r >= 255 || r <= 0)
+				rinc = -rinc;
+			
+			if (b >= 255 || b <= 0)
+				binc = -binc;
+			
+			
+			g2.setColor(new Color(r, 127, b));
 			g2.drawLine(lastX, lastY, turtle.getOffsetX(), turtle.getOffsetY());
 			
 			lastX = (turtle.getOffsetX());
 			lastY = (turtle.getOffsetY());
+			r += rinc;
+			b += binc;
 		}
 		
 		g.setColor(Color.BLACK);
 		
 		g.clearRect(0, 0, getWidth(), getHeight());
 		g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
-		g.drawImage(turtleImage, turtle.getX(), turtle.getY(), null);
-		System.out.println(turtle.getOffsetX() + " : " + turtle.getX());
+		
+		turtle.draw(g);
 		
 		g.dispose();
 		bs.show();
@@ -226,20 +227,41 @@ public class Practice extends Canvas implements Runnable
 		}
 	}
 	
-	@SuppressWarnings("static-access")
 	public void run()
 	{
-		while (running)
-		{
-			render();
-			// Temporary
-			turtle.update();
-			try {
-				thread.sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+
+		double ns = 1000000000.0 / 30.0;
+		double delta = 0;
+		
+		int frames = 0;
+		int updates = 0;
+		
+		long lastTime = System.nanoTime();
+		long timer = System.currentTimeMillis();
+	
+	    while (running) {
+	    	long now = System.nanoTime();
+	    	
+	    	delta += (now - lastTime) / ns;
+	    	lastTime = now;
+	    	
+	    	while(delta >= 1) {
+	    		turtle.update();
+	    		updates++;
+	    		delta--;
+	    	}
+	    	
+	      render();
+	      frames++;
+	      
+	      if(System.currentTimeMillis() - timer >= 1000) {
+	      	timer += 1000;
+	      	frames = 0;
+	      	updates = 0;
+	      }
+	    }
+	    
+	    stop();
 	}
 	
 	public static void main(String[] args)
