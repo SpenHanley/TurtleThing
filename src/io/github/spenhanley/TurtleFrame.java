@@ -24,7 +24,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
-public class Practice extends Canvas implements Runnable
+public class TurtleFrame extends Canvas implements Runnable
 {
 	
 	private static final long serialVersionUID = 1L;
@@ -62,7 +62,7 @@ public class Practice extends Canvas implements Runnable
 	private JMenuItem loadScript;
 	private ScriptParser parser;
 	
-	public Practice()
+	public TurtleFrame()
 	{
 		frame = new JFrame();
 		
@@ -300,7 +300,7 @@ public class Practice extends Canvas implements Runnable
 					e.printStackTrace();
 				}
 				
-				Practice p = new Practice();
+				TurtleFrame p = new TurtleFrame();
 				p.frame.add(p.container);
 				p.frame.setTitle(p.TITLE);
 				p.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);

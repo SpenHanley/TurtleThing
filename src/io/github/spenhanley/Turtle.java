@@ -32,10 +32,22 @@ public class Turtle {
 	private int previousRot; // Rotation
 	private int dir = STOP; // Current direction
 
+	/**
+	 * Create a new turtle instance
+	 * @param width The width of the canvas
+	 * @param height The height of the canvas
+	 * */
 	public Turtle(int width, int height) {
 		this(width, height, width / 2, height / 2);
 	}
 
+	/**
+	 * Create a new turtle instance
+	 * @param width The width of the canvas
+	 * @param height The height of the canvas
+	 * @param startX The x-coordinate to place the turtle at
+	 * @param startY The y-coordinate to place the turtle at
+	 * */
 	public Turtle(int width, int height, int startX, int startY) {
 		this.curCycles = 0;
 		this.width = width;
