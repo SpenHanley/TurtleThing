@@ -8,19 +8,16 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.Random;
 
-import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
@@ -41,8 +38,8 @@ public class Practice extends Canvas implements Runnable
 	private int r = 255;
 	private int b = 255;
 	
-	private int width = 400;
-	private int height = 400;
+	private int width = 640;
+	private int height = 640;
 	
 	private int rinc = 1;
 	private int binc = 3;
@@ -60,6 +57,10 @@ public class Practice extends Canvas implements Runnable
 	private JTextField cyclesField;
 	private JLabel lblCycles;
 	private JCheckBox chkDraw;
+	private JMenuBar mBar;
+	private JMenu fileMenu;
+	private JMenuItem loadScript;
+	private ScriptParser parser;
 	
 	public Practice()
 	{
@@ -96,6 +97,26 @@ public class Practice extends Canvas implements Runnable
 		container.add(btnPanel, BorderLayout.NORTH);
 		container.add(canv, BorderLayout.CENTER);
 		container.add(fieldPanel, BorderLayout.SOUTH);
+		parser = new ScriptParser();
+		
+		mBar = new JMenuBar();
+		fileMenu = new JMenu("File");
+		loadScript = new JMenuItem("Load Script");
+		
+		fileMenu.add(loadScript);
+		mBar.add(fileMenu);
+		
+		addActionListeners();
+		
+		turtle = new Turtle(width, height);
+		
+		setSize(new Dimension(width, height));
+		setBackground(Color.BLACK);
+		setFocusable(true);
+	}
+	
+	public void addActionListeners()
+	{
 		
 		chkDraw.addActionListener((e) -> {
 			if (chkDraw.isSelected()) {
@@ -103,6 +124,10 @@ public class Practice extends Canvas implements Runnable
 				startY = turtle.getOffsetY();
 				lastX = startX;
 				lastY = startY;
+			} else 
+			{
+				lastX = 0;
+				lastY = 0;
 			}
 		});
 		
@@ -114,7 +139,7 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_UP, cycles, 0);
+			turtle.move(Turtle.UP, cycles);
 		});
 		
 		down.addActionListener((e) -> {
@@ -125,7 +150,7 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_DOWN, cycles, 180);
+			turtle.move(Turtle.DOWN, cycles);
 		});
 		
 		left.addActionListener((e) -> {
@@ -136,7 +161,7 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_LEFT, cycles, 270);
+			turtle.move(Turtle.LEFT, cycles);
 		});
 		
 		right.addActionListener((e) -> {
@@ -147,14 +172,12 @@ public class Practice extends Canvas implements Runnable
 				cycles = Integer.parseInt(cyclesString);
 			else
 				cycles = 1;
-			turtle.move(Turtle.MOVE_RIGHT, cycles, 90);
+			turtle.move(Turtle.RIGHT, cycles);
 		});
 		
-		turtle = new Turtle(width, height);
-		
-		setSize(new Dimension(width, height));
-		setBackground(Color.BLACK);
-		setFocusable(true);
+		loadScript.addActionListener((e) -> {
+			parser.loadFile();
+		});
 	}
 	
 	public void render()
@@ -173,8 +196,7 @@ public class Practice extends Canvas implements Runnable
 		if (chkDraw.isSelected())
 		{
 			g2.setStroke(new BasicStroke(10));
-			Random rand = new Random();
-			
+
 			if (r >= 255 || r <= 0)
 				rinc = -rinc;
 			
@@ -182,7 +204,7 @@ public class Practice extends Canvas implements Runnable
 				binc = -binc;
 			
 			
-			g2.setColor(new Color(r, 127, b));
+			g2.setColor(new Color(127, 127, b));
 			g2.drawLine(lastX, lastY, turtle.getOffsetX(), turtle.getOffsetY());
 			
 			lastX = (turtle.getOffsetX());
@@ -227,6 +249,7 @@ public class Practice extends Canvas implements Runnable
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	public void run()
 	{
 
@@ -283,6 +306,8 @@ public class Practice extends Canvas implements Runnable
 				p.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 				p.frame.setLocationRelativeTo(null);
 				p.frame.pack();
+				p.frame.setResizable(false);
+				p.frame.setJMenuBar(p.mBar);
 				p.frame.setVisible(true);
 				
 				p.start();	
